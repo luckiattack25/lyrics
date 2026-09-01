@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Genius Lyric Typer (Debug)</title>
+<style>
+    body {
+        background: #111;
+        color: #fff;
+        font-family: Arial, sans-serif;
+        margin: 0;
+        display: flex;
+        height: 100vh;
+    }
+
+    /* Left side: main app */
+    #main {
+        flex: 2;
+        padding: 20px;
+        overflow-y: auto;
+    }
+
+    /* Right side: debug console */
+    #debug {
+        flex: 1;
+        background: #1a1a1a;
+        padding: 15px;
+        border-left: 2px solid #333;
+        font-size: 14px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+    }
+
+    #urlBox {
+        width: 100%;
+        padding: 10px;
+        font-size: 16px;
+        border-radius: 6px;
+        border: none;
+        margin-bottom: 10px;
+    }
+
+    #loadBtn {
+        width: 100%;
+        padding: 12px;
+        font-size: 18px;
+        background: #ffdd33;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: bold;
+    }
+
+    #lyricsBox {
+        margin-top: 25px;
+        font-size: 22px;
+        line-height: 1.6;
+        white-space: pre-wrap;
+        border-left: 4px solid #ffdd33;
+        padding-left: 12px;
+        min-height: 200px;
+    }
+
+    #progressContainer {
+        width: 100%;
+        background: #333;
+        height: 10px;
+        border-radius: 5px;
+        margin-top: 20px;
+    }
+
+    #progressBar {
+        width: 0%;
+        height: 100%;
+        background: #ffdd33;
+        border-radius: 5px;
+        transition: width 0.1s linear;
+    }
+
+    .cursor {
+        display: inline-block;
+        width: 10px;
+        background: #ffdd33;
+        margin-left: 3px;
+        animation: blink 0.6s infinite;
+    }
+
+    @keyframes blink {
+        0% { opacity: 1; }
+        50% { opacity: 0; }
+        100% { opacity: 1; }
+    }
+</style>
+</head>
+<body>
+
+<div id="main">
+    <h1>Genius Lyric Typer (Debug)</h1>
+
+    <input id="urlBox" placeholder="Paste Genius lyric link here…">
+    <button id="loadBtn">Load Lyrics</button>
+
+    <div id="lyricsBox"></div>
+
+    <div id="progressContainer">
+        <div id="progressBar"></div>
+    </div>
+</div>
+
+<div id="debug">Debug console:\n</div>
+
+<script>
+function debugLog(msg) {
+    const dbg = document.getElementById("debug");
+    dbg.textContent += msg + "\n";
+}
+
+async function fetchLyrics(url) {
+    debugLog("Fetching URL: " + url);
+
+    const proxy = "https://cors-anywhere.herokuapp.com/";
+    const response = await fetch(proxy + url);
+    const html = await response.text();
+
+    debugLog("Fetched HTML length: " + html.length);
+
+    // Genius changed structure: lyrics now inside <div class="Lyrics__Container-sc-...">
+    const matches = [...html.matchAll(/<div class="Lyrics__Container[^"]*"[^>]*>([\s\S]*?)<\/div>/g)];
+
+    debugLog("Found lyric containers: " + matches.length);
+
+    let lyrics = matches
+        .map(m => m[1]
+            .replace(/<br\s*\/?>/g, "\n")
+            .replace(/<\/?[^>]+>/g, "")
+            .trim()
+        )
+        .join("\n\n");
+
+    debugLog("Parsed lyrics length: " + lyrics.length);
+    debugLog("RAW LYRICS:\n" + lyrics);
+
+    return lyrics;
+}
+
+function typeLyrics(text) {
+    const box = document.getElementById("lyricsBox");
+    const bar = document.getElementById("progressBar");
+
+    box.innerHTML = "";
+    let i = 0;
+
+    debugLog("Starting typer…");
+
+    function type() {
+        if (i < text.length) {
+            box.innerHTML = text.substring(0, i) + '<span class="cursor"></span>';
+            bar.style.width = (i / text.length * 100) + "%";
+            i++;
+            setTimeout(type, 35);
+        } else {
+            box.innerHTML = text;
+            bar.style.width = "100%";
+            debugLog("Typing complete.");
+        }
+    }
+
+    type();
+}
+
+document.getElementById("loadBtn").onclick = async () => {
+    const url = document.getElementById("urlBox").value.trim();
+    if (!url) return alert("Paste a Genius link first.");
+
+    document.getElementById("lyricsBox").innerHTML = "Loading…";
+    debugLog("=== NEW LOAD ===");
+
+    try {
+        const lyrics = await fetchLyrics(url);
+
+        if (!lyrics || lyrics.length < 5) {
+            debugLog("ERROR: Lyrics empty or too short.");
+            document.getElementById("lyricsBox").innerHTML = "Error: No lyrics found.";
+            return;
+        }
+
+        debugLog("Lyrics successfully loaded. Starting typer.");
+        typeLyrics(lyrics);
+
+    } catch (err) {
+        debugLog("ERROR: " + err);
+        document.getElementById("lyricsBox").innerHTML = "Error loading lyrics.";
+    }
+};
+</script>
+
+</body>
+</html>
