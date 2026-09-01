@@ -1,77 +1,50 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Lyric Typer (Manual)</title>
-<style>
-  body { background:#111; color:#fff; font-family:Arial; padding:20px; }
-  h1 { margin-bottom:10px; }
-  textarea { width:100%; height:150px; margin-bottom:10px; padding:10px; font-size:14px; }
-  #startBtn { width:100%; padding:12px; background:#ffdd33; border:none; font-size:18px; cursor:pointer; font-weight:bold; }
-  #lyricsBox { margin-top:20px; font-size:22px; line-height:1.6; white-space:pre-wrap; border-left:4px solid #ffdd33; padding-left:12px; min-height:200px; }
-  #progressContainer { width:100%; background:#333; height:10px; border-radius:5px; margin-top:20px; }
-  #progressBar { width:0%; height:100%; background:#ffdd33; border-radius:5px; transition:width 0.1s linear; }
-  .cursor { display:inline-block; width:10px; background:#ffdd33; margin-left:3px; animation:blink 0.6s infinite; }
-  @keyframes blink { 0%{opacity:1;} 50%{opacity:0;} 100%{opacity:1;} }
-  #debug { margin-top:20px; background:#222; padding:10px; white-space:pre-wrap; font-size:13px; }
-</style>
+  <meta charset="UTF-8">
+  <title>Typewriter Lyrics Player</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <div class="app">
+    <h1>Typewriter Lyrics Player</h1>
 
-<h1>Lyric Typer (Manual Paste)</h1>
-<p>Paste lyrics or any text below, then watch it type out with timing + progress bar.</p>
+    <div class="input-section">
+      <label class="field">
+        <span>Artist:</span>
+        <input id="artist" type="text" value="Lucki">
+      </label>
 
-<textarea id="inputBox" placeholder="Paste lyrics or text here..."></textarea>
-<button id="startBtn">Start Typing</button>
+      <label class="field">
+        <span>Song Title:</span>
+        <input id="title" type="text" value="Goku">
+      </label>
 
-<div id="lyricsBox"></div>
+      <label class="field">
+        <span>Song Duration (seconds):</span>
+        <input id="duration" type="number" min="5" value="140">
+      </label>
 
-<div id="progressContainer">
-  <div id="progressBar"></div>
-</div>
+      <button id="startBtn">Load & Start</button>
+      <button id="resetBtn" class="secondary">Reset</button>
+    </div>
 
-<div id="debug">Debug:
-</div>
+    <div class="progress-section">
+      <div class="progress-bar">
+        <div id="progressFill"></div>
+      </div>
+      <div class="progress-info">
+        <span id="timeInfo">0.0 / 0.0 s</span>
+        <span id="percentInfo">0%</span>
+      </div>
+    </div>
 
-<script>
-function debug(msg) {
-  document.getElementById("debug").textContent += "\n" + msg;
-}
+    <div class="lyrics-display">
+      <pre id="lyricsOutput"></pre>
+    </div>
+  </div>
 
-function typeLyrics(text) {
-  const box = document.getElementById("lyricsBox");
-  const bar = document.getElementById("progressBar");
-  box.innerHTML = "";
-  let i = 0;
-
-  debug("Starting typer. Text length: " + text.length);
-
-  function type() {
-    if (i < text.length) {
-      box.innerHTML = text.substring(0, i) + '<span class="cursor"></span>';
-      bar.style.width = (i / text.length * 100) + "%";
-      i++;
-      setTimeout(type, 35); // typing speed
-    } else {
-      box.innerHTML = text;
-      bar.style.width = "100%";
-      debug("Typing complete.");
-    }
-  }
-
-  type();
-}
-
-document.getElementById("startBtn").onclick = () => {
-  const text = document.getElementById("inputBox").value;
-  if (!text.trim()) {
-    alert("Paste some text first.");
-    return;
-  }
-  debug("=== NEW RUN ===");
-  typeLyrics(text);
-};
-</script>
-
+  <script src="script.js"></script>
 </body>
 </html>
