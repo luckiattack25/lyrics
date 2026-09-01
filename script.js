@@ -1,5 +1,4 @@
-const artistInput = document.getElementById("artist");
-const titleInput = document.getElementById("title");
+const urlInput = document.getElementById("lyricsUrl");
 const durationInput = document.getElementById("duration");
 const startBtn = document.getElementById("startBtn");
 const resetBtn = document.getElementById("resetBtn");
@@ -28,29 +27,28 @@ function resetPlayer() {
   percentInfo.textContent = "0%";
 }
 
-async function fetchLyrics(artist, title) {
-  const url = `https://api.lyrics.ovh/v1/${artist}/${title}`;
-  const res = await fetch(url);
-  const data = await res.json();
-  return data.lyrics || "";
+async function fetchFandomLyrics(url) {
+  const proxyUrl = "https://corsproxy.io/?" + url;
+  const html = await fetch(proxyUrl).then(r => r.text());
+
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const box = doc.querySelector(".lyricbox");
+
+  if (!box) return "";
+
+  return box.innerText.trim();
 }
 
 async function startTyping() {
   resetPlayer();
 
-  const artist = artistInput.value.trim();
-  const title = titleInput.value.trim();
+  const url = urlInput.value.trim();
   const durationSeconds = Number(durationInput.value);
 
-  if (!artist || !title) {
-    alert("Enter artist and song title.");
-    return;
-  }
-
-  const lyrics = await fetchLyrics(artist, title);
+  const lyrics = await fetchFandomLyrics(url);
 
   if (!lyrics) {
-    alert("Lyrics not found.");
+    alert("Lyrics not found on Fandom.");
     return;
   }
 
@@ -93,7 +91,7 @@ function updateProgress(forceComplete = false) {
 startBtn.addEventListener("click", startTyping);
 resetBtn.addEventListener("click", resetPlayer);
 
-// Auto-load Goku by Lucki on page load
+// Auto-load Goku by Lucki
 window.onload = () => {
   startTyping();
 };
