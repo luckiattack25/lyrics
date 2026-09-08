@@ -27,11 +27,6 @@ function resetPlayer() {
   percentInfo.textContent = "0%";
 }
 
-// Convert "New Drank" → "New_Drank"
-function fandomFormat(str) {
-  return str.trim().replace(/\s+/g, "_");
-}
-
 async function fetchFandomLyrics(url) {
   const proxyUrl = "https://corsproxy.io/?" + url;
   const html = await fetch(proxyUrl).then(r => r.text());
@@ -40,21 +35,15 @@ async function fetchFandomLyrics(url) {
   const box = doc.querySelector(".lyricbox");
 
   if (!box) return "";
+
   return box.innerText.trim();
 }
 
 async function startTyping() {
   resetPlayer();
 
-  let url = urlInput.value.trim();
+  const url = urlInput.value.trim();
   const durationSeconds = Number(durationInput.value);
-
-  // If user typed "Lucki:New Drank", fix it automatically
-  if (url.includes(":")) {
-    const [artist, title] = url.split(":");
-    const fixedTitle = fandomFormat(title);
-    url = `https://lyrics.fandom.com/wiki/${artist}:${fixedTitle}`;
-  }
 
   const lyrics = await fetchFandomLyrics(url);
 
@@ -104,6 +93,5 @@ resetBtn.addEventListener("click", resetPlayer);
 
 // Auto-load Goku by Lucki
 window.onload = () => {
-  urlInput.value = "Lucki:Goku";
   startTyping();
 };
