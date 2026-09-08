@@ -3,7 +3,6 @@
 <html lang="en">
 
 <head>
-
   <meta charset="UTF-8">
 
 <meta
@@ -14,16 +13,13 @@ content="width=device-width, initial-scale=1.0"
 
 <meta
 name="theme-color"
-content="#06070b"
+content="#05060a"
 
 >
 
   <title>EchoType</title>
 
-  <link
-    rel="preconnect"
-    href="https://fonts.googleapis.com"
-  >
+  <link rel="preconnect" href="https://fonts.googleapis.com">
 
   <link
     rel="preconnect"
@@ -36,32 +32,34 @@ content="#06070b"
     rel="stylesheet"
   >
 
-  <link
-    rel="stylesheet"
-    href="style.css"
-  >
-
+  <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-  <!-- BACKGROUND -->
+  <!-- =====================================================
+       ANIMATED BACKGROUND
+  ====================================================== -->
 
   <div class="background" aria-hidden="true">
 
 ```
-<div class="glow glow-a"></div>
-<div class="glow glow-b"></div>
-<div class="glow glow-c"></div>
+<canvas id="rainCanvas"></canvas>
 
-<div class="stars"></div>
+<div class="ambient ambient-one"></div>
+<div class="ambient ambient-two"></div>
+<div class="ambient ambient-three"></div>
 
-<div class="grid"></div>
+<div class="noise"></div>
+
+<div class="perspective-grid"></div>
 ```
 
   </div>
 
-  <!-- APP -->
+  <!-- =====================================================
+       APPLICATION
+  ====================================================== -->
 
   <main class="app">
 
@@ -72,19 +70,19 @@ content="#06070b"
 
   <div class="brand">
 
-    <div class="logo">
+    <div class="brand-logo">
       <span></span>
       <span></span>
       <span></span>
     </div>
 
-    <div>
+    <div class="brand-copy">
 
       <div class="brand-name">
         EchoType
       </div>
 
-      <div class="brand-tagline">
+      <div class="brand-subtitle">
         Lyrics in motion
       </div>
 
@@ -93,7 +91,7 @@ content="#06070b"
   </div>
 
 
-  <div class="ready-state">
+  <div class="connection">
 
     <span
       id="statusDot"
@@ -109,45 +107,60 @@ content="#06070b"
 </header>
 
 
-<!-- MAIN CONTENT -->
+<!-- ===================================================
+     CONTENT
+==================================================== -->
 
-<div class="layout">
-
-
-  <!-- LEFT -->
-
-  <section class="player glass">
+<section class="content">
 
 
-    <div class="section-label">
-      PLAYER
+  <!-- =================================================
+       PLAYER CARD
+  ================================================== -->
+
+  <section class="player card">
+
+
+    <div class="card-heading">
+
+      <div class="eyebrow">
+        NOW PLAYING
+      </div>
+
+      <div
+        id="qualityBadge"
+        class="tiny-badge"
+      >
+        IDLE
+      </div>
+
     </div>
 
 
-    <!-- COVER -->
+    <!-- 3D ARTWORK -->
 
     <div
-      class="cover-stage"
-      id="coverStage"
+      id="artStage"
+      class="art-stage"
     >
 
-      <div class="cover-shadow"></div>
+      <div class="art-shadow"></div>
 
       <div
-        class="cover-card"
-        id="coverCard"
+        id="artCard"
+        class="art-card"
       >
 
         <div
-          id="placeholderCover"
-          class="placeholder-cover"
+          id="placeholderArt"
+          class="placeholder-art"
         >
 
-          <div class="placeholder-e">
+          <div class="placeholder-symbol">
             E
           </div>
 
-          <div class="equalizer">
+          <div class="placeholder-bars">
 
             <span></span>
             <span></span>
@@ -161,32 +174,33 @@ content="#06070b"
 
 
         <img
-          id="coverImage"
-          class="cover-image hidden"
+          id="coverArt"
+          class="cover-art hidden"
           alt="Album artwork"
         >
 
-        <div class="cover-shine"></div>
+
+        <div class="art-reflection"></div>
 
       </div>
 
 
-      <div class="ring ring-a"></div>
-      <div class="ring ring-b"></div>
-      <div class="ring ring-c"></div>
+      <div class="art-ring ring-1"></div>
+      <div class="art-ring ring-2"></div>
+      <div class="art-ring ring-3"></div>
 
     </div>
 
 
-    <!-- TRACK -->
+    <!-- TRACK INFORMATION -->
 
-    <div class="track">
+    <div class="track-info">
 
       <div
         id="artistDisplay"
         class="track-artist"
       >
-        Unknown Artist
+        UNKNOWN ARTIST
       </div>
 
       <h1 id="titleDisplay">
@@ -194,24 +208,168 @@ content="#06070b"
       </h1>
 
       <p id="albumDisplay">
-        Enter an artist and song below.
+        Search for a track to begin
       </p>
 
     </div>
 
 
-    <!-- PROGRESS -->
+    <!-- TYPEWRITER DURATION -->
 
-    <div class="timeline">
+    <div class="duration-block">
+
+      <div class="duration-header">
+
+        <span>
+          TYPEWRITER LENGTH
+        </span>
+
+        <strong id="durationValue">
+          0:00
+        </strong>
+
+      </div>
+
+      <input
+        id="durationSlider"
+        type="range"
+        min="5"
+        max="600"
+        step="1"
+        value="140"
+        aria-label="Typewriter duration"
+      >
+
+    </div>
+
+
+    <!-- SEARCH FORM -->
+
+    <div class="search-box">
+
+      <div class="search-heading">
+
+        <div>
+
+          <strong>
+            Find a track
+          </strong>
+
+          <small>
+            Artist + song name
+          </small>
+
+        </div>
+
+        <span>
+          ITUNES
+        </span>
+
+      </div>
+
+
+      <label class="field">
+
+        <span>Artist</span>
+
+        <input
+          id="artistInput"
+          type="text"
+          placeholder="Lucki"
+          autocomplete="off"
+        >
+
+      </label>
+
+
+      <label class="field">
+
+        <span>Song</span>
+
+        <input
+          id="songInput"
+          type="text"
+          placeholder="Goku"
+          autocomplete="off"
+        >
+
+      </label>
+
+
+      <button
+        id="loadBtn"
+        class="load-button"
+        type="button"
+      >
+
+        <span id="loadText">
+          Find & Load
+        </span>
+
+        <b>
+          →
+        </b>
+
+      </button>
+
+    </div>
+
+
+    <!-- PLAYER CONTROLS -->
+
+    <div class="controls">
+
+      <button
+        id="restartBtn"
+        class="control-button"
+        type="button"
+        aria-label="Restart typewriter"
+        title="Restart"
+      >
+        ↺
+      </button>
+
+
+      <button
+        id="playBtn"
+        class="play-button"
+        type="button"
+        aria-label="Start typewriter"
+        title="Start"
+      >
+
+        <span id="playIcon">
+          ▶
+        </span>
+
+      </button>
+
+
+      <button
+        id="clearBtn"
+        class="control-button"
+        type="button"
+        aria-label="Clear song"
+        title="Clear"
+      >
+        ×
+      </button>
+
+    </div>
+
+
+    <!-- PLAYBACK PROGRESS -->
+
+    <div class="player-progress">
 
       <input
         id="seekBar"
         type="range"
         min="0"
         max="100"
-        value="0"
         step="0.1"
-        aria-label="Song progress"
+        value="0"
+        aria-label="Lyrics progress"
       >
 
       <div class="time-row">
@@ -229,161 +387,21 @@ content="#06070b"
     </div>
 
 
-    <!-- CONTROLS -->
-
-    <div class="controls">
-
-      <button
-        id="restartBtn"
-        class="circle-btn"
-        type="button"
-        title="Restart"
-        aria-label="Restart song"
-      >
-        ↺
-      </button>
-
-      <button
-        id="playBtn"
-        class="play-btn"
-        type="button"
-        title="Play"
-        aria-label="Play"
-      >
-        <span id="playIcon">
-          ▶
-        </span>
-      </button>
-
-      <button
-        id="muteBtn"
-        class="circle-btn"
-        type="button"
-        title="Mute"
-        aria-label="Mute"
-      >
-        ◖)
-      </button>
-
-    </div>
-
-
-    <!-- VOLUME -->
-
-    <div class="volume">
-
-      <span>
-        VOL
-      </span>
-
-      <input
-        id="volumeBar"
-        type="range"
-        min="0"
-        max="1"
-        value="0.85"
-        step="0.01"
-        aria-label="Volume"
-      >
-
-    </div>
-
-
-    <!-- AUDIO SOURCE -->
-
-    <div class="source">
-
-      <div class="source-top">
-
-        <div>
-
-          <strong>
-            Find a song
-          </strong>
-
-          <small>
-            Artist + title
-          </small>
-
-        </div>
-
-        <span class="badge">
-          MUSIC
-        </span>
-
-      </div>
-
-
-      <label>
-        <span>Artist</span>
-
-        <input
-          id="artistInput"
-          type="text"
-          placeholder="e.g. Lucki"
-          autocomplete="off"
-        >
-
-      </label>
-
-
-      <label>
-        <span>Song</span>
-
-        <input
-          id="songInput"
-          type="text"
-          placeholder="e.g. Goku"
-          autocomplete="off"
-        >
-
-      </label>
-
-
-      <label>
-        <span>Audio URL</span>
-
-        <input
-          id="audioInput"
-          type="url"
-          placeholder="Optional direct audio URL"
-          autocomplete="off"
-        >
-
-      </label>
-
-
-      <button
-        id="loadBtn"
-        class="load-btn"
-        type="button"
-      >
-
-        <span>
-          Load Song
-        </span>
-
-        <b>
-          →
-        </b>
-
-      </button>
-
-    </div>
-
   </section>
 
 
-  <!-- RIGHT -->
+  <!-- =================================================
+       LYRICS CARD
+  ================================================== -->
 
-  <section class="lyrics glass">
+  <section class="lyrics card">
 
 
-    <div class="lyrics-top">
+    <div class="lyrics-heading">
 
       <div>
 
-        <div class="section-label">
+        <div class="eyebrow">
           LIVE LYRICS
         </div>
 
@@ -404,48 +422,65 @@ content="#06070b"
     </div>
 
 
-    <div class="lyrics-window">
+    <!-- LYRICS VIEW -->
 
-      <div class="lyrics-light"></div>
+    <div
+      id="lyricsWindow"
+      class="lyrics-window"
+    >
+
+      <div class="lyrics-aura"></div>
+
 
       <div
         id="lyricsOutput"
         class="lyrics-output"
       >
 
-        <div class="lyrics-empty">
+        <div class="empty-state">
 
-          <div class="empty-icon">
+          <div class="empty-symbol">
             ♪
           </div>
 
           <strong>
-            Nothing playing
+            Waiting for a song
           </strong>
 
           <span>
-            Choose a song to begin.
+            Enter an artist and song above.
           </span>
 
         </div>
 
       </div>
 
-      <div class="text-cursor"></div>
+
+      <div class="cursor-line"></div>
 
     </div>
 
 
-    <div class="lyrics-footer">
+    <!-- LYRICS PROGRESS -->
 
-      <div class="sync-label">
+    <div class="lyrics-bottom">
 
-        <span id="percentInfo">
-          0%
-        </span>
+      <div class="progress-info">
 
-        <span>
-          playback sync
+        <div>
+
+          <strong id="percentInfo">
+            0%
+          </strong>
+
+          <span>
+            written
+          </span>
+
+        </div>
+
+        <span id="sourceText">
+          No lyrics loaded
         </span>
 
       </div>
@@ -464,23 +499,23 @@ content="#06070b"
 
   </section>
 
-</div>
+</section>
 
 
 <!-- FOOTER -->
 
-<footer>
+<footer class="footer">
 
   <span>
-    EchoType
+    ECHOTYPE
   </span>
 
-  <span>
+  <span class="footer-dot">
     •
   </span>
 
-  <span id="footerStatus">
-    No song loaded
+  <span id="footerText">
+    Ready
   </span>
 
 </footer>
