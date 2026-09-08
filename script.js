@@ -1,11 +1,11 @@
-const lyricsUrlInput =
-document.getElementById("lyricsUrl");
+const artistInput =
+document.getElementById("artistInput");
 
-const audioUrlInput =
-document.getElementById("audioUrl");
+const songInput =
+document.getElementById("songInput");
 
-const durationInput =
-document.getElementById("duration");
+const audioInput =
+document.getElementById("audioInput");
 
 const loadBtn =
 document.getElementById("loadBtn");
@@ -19,19 +19,51 @@ document.getElementById("restartBtn");
 const muteBtn =
 document.getElementById("muteBtn");
 
-const audioPlayer =
-document.getElementById("audioPlayer");
+const volumeBar =
+document.getElementById("volumeBar");
 
 const seekBar =
 document.getElementById("seekBar");
 
-const volumeBar =
-document.getElementById("volumeBar");
+const audio =
+document.createElement("audio");
 
-const currentTimeLabel =
+audio.preload = "metadata";
+
+const artistDisplay =
+document.getElementById("artistDisplay");
+
+const titleDisplay =
+document.getElementById("titleDisplay");
+
+const albumDisplay =
+document.getElementById("albumDisplay");
+
+const coverImage =
+document.getElementById("coverImage");
+
+const placeholderCover =
+document.getElementById("placeholderCover");
+
+const coverCard =
+document.getElementById("coverCard");
+
+const lyricsOutput =
+document.getElementById("lyricsOutput");
+
+const lyricsStatus =
+document.getElementById("lyricsStatus");
+
+const statusText =
+document.getElementById("statusText");
+
+const statusDot =
+document.getElementById("statusDot");
+
+const currentTimeText =
 document.getElementById("currentTime");
 
-const totalTimeLabel =
+const totalTimeText =
 document.getElementById("totalTime");
 
 const progressFill =
@@ -40,74 +72,36 @@ document.getElementById("progressFill");
 const percentInfo =
 document.getElementById("percentInfo");
 
-const lyricsOutput =
-document.getElementById("lyricsOutput");
-
-const lyricsState =
-document.getElementById("lyricsState");
-
-const statusText =
-document.getElementById("statusText");
-
-const statusDot =
-document.querySelector(".status-dot");
-
-const connectionLabel =
-document.getElementById("connectionLabel");
-
-const trackTitle =
-document.getElementById("trackTitle");
-
-const trackArtist =
-document.getElementById("trackArtist");
-
-const trackMeta =
-document.getElementById("trackMeta");
-
-const coverArt =
-document.getElementById("coverArt");
-
-const albumPlaceholder =
-document.getElementById("albumPlaceholder");
-
-const albumCoverWrap =
-document.getElementById("albumCoverWrap");
-
-const albumStage =
-document.getElementById("albumStage");
+const footerStatus =
+document.getElementById("footerStatus");
 
 const playIcon =
 document.getElementById("playIcon");
-
-const volumeIcon =
-document.getElementById("volumeIcon");
 
 /* =========================================================
 STATE
 ========================================================= */
 
-let fullLyrics = "";
+let lyrics = "";
 
-let animationFrame = null;
-
-let lyricsLoaded = false;
-
-let fallbackDuration = 140;
-
-let wasPlayingBeforeSeek = false;
+let hasLyrics = false;
 
 let currentSong = {
-artist: "Unknown Artist",
-title: "Waiting for a song",
-cover: null
+artist: "",
+title: "",
+album: ""
 };
 
+let backgroundAnimation = null;
+
 /* =========================================================
-INITIAL AUDIO SETTINGS
+DEFAULT SETTINGS
 ========================================================= */
 
-audioPlayer.volume =
-Number(volumeBar.value);
+audio.volume =
+Number(
+volumeBar.value
+);
 
 /* =========================================================
 HELPERS
@@ -119,18 +113,26 @@ if (
 !Number.isFinite(seconds) ||
 seconds < 0
 ) {
+
+```
 return "0:00";
+```
+
 }
 
 const minutes =
-Math.floor(seconds / 60);
+Math.floor(
+seconds / 60
+);
 
-const remainingSeconds =
-Math.floor(seconds % 60);
+const secondsPart =
+Math.floor(
+seconds % 60
+);
 
 return (
 `${minutes}:${String(
-      remainingSeconds
+      secondsPart
     ).padStart(2, "0")}`
 );
 }
@@ -149,340 +151,317 @@ active
 );
 }
 
-function setLyricsState(
+function setLyricsStatus(
 text,
 live = false
 ) {
 
-lyricsState.textContent =
+lyricsStatus.textContent =
 text;
 
-lyricsState.classList.toggle(
+lyricsStatus.classList.toggle(
 "live",
 live
 );
 }
 
-function resetLyricsDisplay() {
-
-lyricsOutput.innerHTML =
-`<span class="lyrics-placeholder">
-      Your lyrics will appear here.     </span>`;
-
-progressFill.style.width =
-"0%";
-
-percentInfo.textContent =
-"0%";
-}
-
-function updateTrackDisplay(
-artist,
-title,
-meta = ""
-) {
-
-trackArtist.textContent =
-artist || "Unknown Artist";
-
-trackTitle.textContent =
-title || "Unknown Song";
-
-trackMeta.textContent =
-meta ||
-"Ready to play.";
-}
-
 /* =========================================================
-FANDOM URL PARSER
+ITUNES SEARCH
 ========================================================= */
 
-function parseSongFromFandomUrl(url) {
-
-try {
-
-```
-const parsed =
-  new URL(url);
-
-const pathname =
-  decodeURIComponent(
-    parsed.pathname
-  );
-
-const wikiIndex =
-  pathname.toLowerCase()
-    .indexOf("/wiki/");
-
-if (wikiIndex === -1) {
-
-  return {
-    artist: "",
-    title: ""
-  };
-}
-
-const page =
-  pathname.slice(
-    wikiIndex + 6
-  );
-
-const parts =
-  page.split(":");
-
-if (parts.length < 2) {
-
-  return {
-    artist: "",
-    title: page
-      .replace(/_/g, " ")
-      .trim()
-  };
-}
-
-const artist =
-  parts[0]
-    .replace(/_/g, " ")
-    .trim();
-
-const title =
-  parts
-    .slice(1)
-    .join(":")
-    .replace(/_/g, " ")
-    .trim();
-
-return {
-  artist,
-  title
-};
-```
-
-} catch (error) {
-
-```
-console.error(
-  "URL parser error:",
-  error
-);
-
-return {
-  artist: "",
-  title: ""
-};
-```
-
-}
-}
-
-/* =========================================================
-FETCH FANDOM LYRICS
-========================================================= */
-
-async function fetchFandomLyrics(url) {
-
-try {
-
-```
-const proxyUrl =
-  "https://corsproxy.io/?" +
-  encodeURIComponent(url);
-
-const response =
-  await fetch(proxyUrl);
-
-if (!response.ok) {
-
-  throw new Error(
-    `Lyrics request failed: ${response.status}`
-  );
-}
-
-const html =
-  await response.text();
-
-const documentObject =
-  new DOMParser()
-    .parseFromString(
-      html,
-      "text/html"
-    );
-
-/*
-  Fandom lyrics pages can use
-  .lyricbox.
-
-  Keep a few fallbacks so the
-  player is a little more tolerant.
-*/
-
-const lyricBox =
-  documentObject.querySelector(
-    ".lyricbox"
-  );
-
-if (lyricBox) {
-
-  return lyricBox.innerText.trim();
-}
-
-
-const alternative =
-  documentObject.querySelector(
-    ".lyrics"
-  );
-
-if (alternative) {
-
-  return alternative.innerText.trim();
-}
-
-
-return "";
-```
-
-} catch (error) {
-
-```
-console.error(
-  "Lyrics fetch error:",
-  error
-);
-
-return "";
-```
-
-}
-}
-
-/* =========================================================
-FETCH COVER ART
-========================================================= */
-
-async function fetchCoverArt(
+async function findSongMetadata(
 artist,
 title
 ) {
 
-if (!artist && !title) {
-return null;
+const query =
+encodeURIComponent(
+`${artist} ${title}`
+);
+
+const url =
+`https://itunes.apple.com/search?term=${query}&media=music&entity=song&limit=10`;
+
+const response =
+await fetch(url);
+
+if (!response.ok) {
+
+```
+throw new Error(
+  "Music metadata request failed."
+);
+```
+
 }
+
+const data =
+await response.json();
+
+if (
+!data.results ||
+data.results.length === 0
+) {
+
+```
+return null;
+```
+
+}
+
+const wantedArtist =
+artist
+.toLowerCase()
+.trim();
+
+const wantedTitle =
+title
+.toLowerCase()
+.trim();
+
+let result =
+data.results[0];
+
+/*
+Prefer an exact artist/title match.
+*/
+
+for (
+const item of data.results
+) {
+
+```
+const itemArtist =
+  String(
+    item.artistName || ""
+  )
+    .toLowerCase()
+    .trim();
+
+const itemTitle =
+  String(
+    item.trackName || ""
+  )
+    .toLowerCase()
+    .trim();
+
+
+if (
+  itemArtist === wantedArtist &&
+  itemTitle === wantedTitle
+) {
+
+  result =
+    item;
+
+  break;
+}
+```
+
+}
+
+return {
+
+```
+artist:
+  result.artistName ||
+  artist,
+
+title:
+  result.trackName ||
+  title,
+
+album:
+  result.collectionName ||
+  "",
+
+artwork:
+  result.artworkUrl100
+    ? result.artworkUrl100.replace(
+        "100x100",
+        "1000x1000"
+      )
+    : null,
+
+duration:
+  Number.isFinite(
+    result.trackTimeMillis
+  )
+    ? result.trackTimeMillis / 1000
+    : null
+```
+
+};
+}
+
+/* =========================================================
+APPLY METADATA
+========================================================= */
+
+function applyMetadata(
+data,
+fallbackArtist,
+fallbackTitle
+) {
+
+const artist =
+data?.artist ||
+fallbackArtist;
+
+const title =
+data?.title ||
+fallbackTitle;
+
+const album =
+data?.album ||
+"Music";
+
+currentSong = {
+artist,
+title,
+album
+};
+
+artistDisplay.textContent =
+artist;
+
+titleDisplay.textContent =
+title;
+
+albumDisplay.textContent =
+album;
+
+if (
+data &&
+data.artwork
+) {
+
+```
+coverImage.src =
+  data.artwork;
+
+coverImage.onload =
+  () => {
+
+    coverImage.classList.remove(
+      "hidden"
+    );
+
+    placeholderCover.classList.add(
+      "hidden"
+    );
+  };
+
+coverImage.onerror =
+  () => {
+
+    coverImage.classList.add(
+      "hidden"
+    );
+
+    placeholderCover.classList.remove(
+      "hidden"
+    );
+  };
+```
+
+} else {
+
+```
+coverImage.classList.add(
+  "hidden"
+);
+
+placeholderCover.classList.remove(
+  "hidden"
+);
+```
+
+}
+}
+
+/* =========================================================
+LYRIC FETCH
+========================================================= */
+
+async function findLyrics(
+artist,
+title
+) {
+
+/*
+This uses LRCLIB's public API.
+
+```
+We deliberately keep this separate
+from the music artwork lookup because
+they are different services.
+```
+
+*/
+
+const url =
+"https://lrclib.net/api/get?" +
+"artist_name=" +
+encodeURIComponent(artist) +
+"&track_name=" +
+encodeURIComponent(title);
 
 try {
 
 ```
-const searchTerm =
-  encodeURIComponent(
-    `${artist} ${title}`
-  );
-
-const apiUrl =
-  `https://itunes.apple.com/search?term=${searchTerm}&media=music&limit=5`;
-
 const response =
-  await fetch(apiUrl);
+  await fetch(url);
+
 
 if (!response.ok) {
 
-  throw new Error(
-    "Artwork request failed."
-  );
-}
-
-const data =
-  await response.json();
-
-if (
-  !data.results ||
-  data.results.length === 0
-) {
   return null;
 }
 
 
-/*
-  Try to find the closest result
-  to the requested artist/title.
-*/
-
-const normalizedArtist =
-  artist
-    .toLowerCase()
-    .replace(/\s+/g, " ")
-    .trim();
-
-const normalizedTitle =
-  title
-    .toLowerCase()
-    .replace(/\s+/g, " ")
-    .trim();
+const data =
+  await response.json();
 
 
-let bestResult =
-  data.results[0];
+if (
+  data &&
+  data.plainLyrics
+) {
 
-
-for (const result of data.results) {
-
-  const resultArtist =
-    String(
-      result.artistName || ""
-    )
-      .toLowerCase()
-      .replace(/\s+/g, " ")
-      .trim();
-
-  const resultTitle =
-    String(
-      result.trackName || ""
-    )
-      .toLowerCase()
-      .replace(/\s+/g, " ")
-      .trim();
-
-  if (
-    resultArtist === normalizedArtist &&
-    resultTitle === normalizedTitle
-  ) {
-
-    bestResult = result;
-    break;
-  }
-
+  return data.plainLyrics.trim();
 }
 
 
-const artworkUrl =
-  bestResult.artworkUrl100
-    ? bestResult.artworkUrl100
-        .replace(
-          "100x100",
-          "1000x1000"
-        )
-    : null;
+/*
+  Some responses may contain
+  synchronized lyrics instead.
+*/
+
+if (
+  data &&
+  data.syncedLyrics
+) {
+
+  const cleaned =
+    removeLrcTiming(
+      data.syncedLyrics
+    );
+
+  if (cleaned) {
+    return cleaned;
+  }
+}
 
 
-return {
-
-  artist:
-    bestResult.artistName ||
-    artist,
-
-  title:
-    bestResult.trackName ||
-    title,
-
-  cover:
-    artworkUrl
-
-};
+return null;
 ```
 
 } catch (error) {
 
 ```
-console.error(
-  "Cover-art error:",
+console.warn(
+  "Lyrics lookup unavailable:",
   error
 );
 
@@ -493,22 +472,74 @@ return null;
 }
 
 /* =========================================================
-UPDATE COVER
+REMOVE LRC TIMESTAMPS
 ========================================================= */
 
-function applyCoverArt(
-coverUrl
+function removeLrcTiming(
+text
 ) {
 
-if (!coverUrl) {
+return text
+.replace(
+/\(\d{1,3}:\d{2}(?:\.\d+)?\)/g,
+""
+)
+.replace(
+/\r\n/g,
+"\n"
+)
+.trim();
+}
+
+/* =========================================================
+SHOW LYRICS
+========================================================= */
+
+function showLyricsPlaceholder(
+message
+) {
+
+lyricsOutput.innerHTML =
+` <div class="lyrics-empty">
 
 ```
-coverArt.classList.add(
-  "hidden"
+    <div class="empty-icon">
+      ♪
+    </div>
+
+    <strong>
+      ${message}
+    </strong>
+
+    <span>
+      The song can still play without lyrics.
+    </span>
+
+  </div>
+`;
+```
+
+}
+
+function prepareLyrics(
+text
+) {
+
+if (!text) {
+
+```
+hasLyrics =
+  false;
+
+lyrics = "";
+
+showLyricsPlaceholder(
+  "Lyrics unavailable"
 );
 
-albumPlaceholder.classList.remove(
-  "hidden"
+setLyricsStatus(
+  "NO LYRICS",
+  false
 );
 
 return;
@@ -516,194 +547,106 @@ return;
 
 }
 
-coverArt.onload = () => {
+lyrics =
+text;
 
-```
-coverArt.classList.remove(
-  "hidden"
+hasLyrics =
+true;
+
+lyricsOutput.textContent =
+"";
+
+setLyricsStatus(
+"READY",
+false
 );
-
-albumPlaceholder.classList.add(
-  "hidden"
-);
-```
-
-};
-
-coverArt.onerror = () => {
-
-```
-coverArt.classList.add(
-  "hidden"
-);
-
-albumPlaceholder.classList.remove(
-  "hidden"
-);
-```
-
-};
-
-coverArt.src =
-coverUrl;
 }
 
 /* =========================================================
-LOAD SONG METADATA
+AUDIO
 ========================================================= */
 
-async function loadSongMetadata(
-lyricsUrl
+function setAudioSource(
+url
 ) {
 
-const parsed =
-parseSongFromFandomUrl(
-lyricsUrl
-);
+audio.pause();
 
-currentSong.artist =
-parsed.artist ||
-"Unknown Artist";
+audio.currentTime =
+0;
 
-currentSong.title =
-parsed.title ||
-"Unknown Song";
-
-updateTrackDisplay(
-currentSong.artist,
-currentSong.title,
-"Looking up song artwork..."
-);
-
-const artwork =
-await fetchCoverArt(
-parsed.artist,
-parsed.title
-);
-
-if (artwork) {
+if (!url) {
 
 ```
-currentSong.artist =
-  artwork.artist ||
-  currentSong.artist;
-
-currentSong.title =
-  artwork.title ||
-  currentSong.title;
-
-currentSong.cover =
-  artwork.cover ||
-  null;
-
-updateTrackDisplay(
-  currentSong.artist,
-  currentSong.title,
-  "Cover art matched"
-);
-
-applyCoverArt(
-  currentSong.cover
-);
-```
-
-} else {
-
-```
-updateTrackDisplay(
-  currentSong.artist,
-  currentSong.title,
-  "Cover art not found — custom artwork can be added later"
-);
-
-applyCoverArt(null);
-```
-
-}
-}
-
-/* =========================================================
-SET AUDIO SOURCE
-========================================================= */
-
-function loadAudioSource(
-audioUrl
-) {
-
-if (!audioUrl) {
-
-```
-audioPlayer.removeAttribute(
+audio.removeAttribute(
   "src"
 );
 
-audioPlayer.load();
+audio.load();
 
-connectionLabel.textContent =
-  "Lyrics only";
+footerStatus.textContent =
+  "No audio URL";
 
 return false;
 ```
 
 }
 
-audioPlayer.src =
-audioUrl;
+audio.src =
+url;
 
-audioPlayer.load();
+audio.load();
 
-connectionLabel.textContent =
+footerStatus.textContent =
 "Audio connected";
 
 return true;
 }
 
 /* =========================================================
-AUDIO DURATION
+RESET DISPLAY
 ========================================================= */
 
-function getTotalDuration() {
+function resetPlaybackDisplay() {
 
-if (
-Number.isFinite(
-audioPlayer.duration
-) &&
-audioPlayer.duration > 0
-) {
+seekBar.value =
+"0";
+
+progressFill.style.width =
+"0%";
+
+percentInfo.textContent =
+"0%";
+
+currentTimeText.textContent =
+"0:00";
+
+totalTimeText.textContent =
+"0:00";
+
+if (hasLyrics) {
 
 ```
-return audioPlayer.duration;
+lyricsOutput.textContent =
+  "";
 ```
 
 }
-
-return fallbackDuration;
 }
 
 /* =========================================================
-UPDATE VISUAL PROGRESS
+UPDATE UI FROM AUDIO
 ========================================================= */
 
-function updateProgress() {
+function updatePlaybackUI() {
 
 const duration =
-getTotalDuration();
-
-let current =
-0;
+audio.duration;
 
 if (
-Number.isFinite(
-audioPlayer.currentTime
-)
+!Number.isFinite(duration) ||
+duration <= 0
 ) {
-
-```
-current =
-  audioPlayer.currentTime;
-```
-
-} else {
 
 ```
 return;
@@ -711,73 +654,69 @@ return;
 
 }
 
-const progress =
-duration > 0
-? Math.min(
-current / duration,
-1
-)
-: 0;
+const current =
+audio.currentTime;
 
-const percent =
-progress * 100;
+const percentage =
+Math.min(
+(current / duration) * 100,
+100
+);
 
 seekBar.value =
 String(
-percent
+percentage
 );
 
 progressFill.style.width =
-`${percent}%`;
+`${percentage}%`;
 
 percentInfo.textContent =
-`${Math.round(percent)}%`;
+`${Math.round(
+      percentage
+    )}%`;
 
-currentTimeLabel.textContent =
-formatTime(current);
+currentTimeText.textContent =
+formatTime(
+current
+);
 
-totalTimeLabel.textContent =
-formatTime(duration);
+totalTimeText.textContent =
+formatTime(
+duration
+);
 
 /*
-Typewriter synchronization.
-
-```
-Instead of using a separate timer,
-lyric position is calculated directly
-from the song's playback position.
-That keeps text and audio together
-even after seeking or pausing.
-```
-
+Synchronize typewriter text
+to actual audio position.
 */
 
 if (
-lyricsLoaded &&
-fullLyrics.length > 0
+hasLyrics &&
+lyrics.length > 0
 ) {
 
 ```
-const characterPosition =
+const characterIndex =
   Math.floor(
-    fullLyrics.length *
-    progress
+    lyrics.length *
+    (current / duration)
   );
 
-const visibleText =
-  fullLyrics.slice(
+
+const visible =
+  lyrics.slice(
     0,
-    characterPosition
+    characterIndex
   );
 
 
 lyricsOutput.textContent =
-  visibleText;
+  visible;
 
 
 if (
-  visibleText.length > 0 &&
-  audioPlayer.paused === false
+  !audio.paused
 ) {
 
   lyricsOutput.scrollTop =
@@ -786,60 +725,35 @@ if (
 ```
 
 }
-
-if (!audioPlayer.paused) {
-
-```
-animationFrame =
-  requestAnimationFrame(
-    updateProgress
-  );
-```
-
-} else {
-
-```
-animationFrame = null;
-```
-
-}
 }
 
 /* =========================================================
-PLAY / PAUSE UI
+PLAY UI
 ========================================================= */
 
-function updatePlayUI(
-isPlaying
+function setPlayingUI(
+playing
 ) {
 
-if (isPlaying) {
+if (playing) {
 
 ```
 playIcon.textContent =
   "Ⅱ";
 
-playBtn.setAttribute(
-  "aria-label",
-  "Pause"
-);
-
-playBtn.setAttribute(
-  "title",
-  "Pause"
-);
-
 playBtn.classList.add(
   "playing"
 );
 
-setLyricsState(
-  "PLAYING",
+setStatus(
+  "Playing",
   true
 );
 
-setStatus(
-  "Playing",
+setLyricsStatus(
+  hasLyrics
+    ? "PLAYING"
+    : "AUDIO",
   true
 );
 ```
@@ -850,27 +764,17 @@ setStatus(
 playIcon.textContent =
   "▶";
 
-playBtn.setAttribute(
-  "aria-label",
-  "Play"
-);
-
-playBtn.setAttribute(
-  "title",
-  "Play"
-);
-
 playBtn.classList.remove(
   "playing"
 );
 
-setLyricsState(
-  "PAUSED",
+setStatus(
+  "Paused",
   false
 );
 
-setStatus(
-  "Paused",
+setLyricsStatus(
+  "PAUSED",
   false
 );
 ```
@@ -879,23 +783,16 @@ setStatus(
 }
 
 /* =========================================================
-START PLAYBACK
+PLAY
 ========================================================= */
 
-async function playAudio() {
+async function playSong() {
 
-if (
-!audioPlayer.src
-) {
+if (!audio.src) {
 
 ```
 setStatus(
-  "No audio URL",
-  false
-);
-
-setLyricsState(
-  "NO AUDIO",
+  "Add an audio URL",
   false
 );
 
@@ -907,24 +804,17 @@ return;
 try {
 
 ```
-await audioPlayer.play();
+await audio.play();
 
-updatePlayUI(true);
-
-if (!animationFrame) {
-
-  animationFrame =
-    requestAnimationFrame(
-      updateProgress
-    );
-}
+setPlayingUI(
+  true
+);
 ```
 
 } catch (error) {
 
 ```
 console.error(
-  "Playback failed:",
   error
 );
 
@@ -932,112 +822,79 @@ setStatus(
   "Playback blocked",
   false
 );
-
-setLyricsState(
-  "PRESS PLAY",
-  false
-);
 ```
 
 }
 }
 
 /* =========================================================
-PAUSE PLAYBACK
+TOGGLE
 ========================================================= */
 
-function pauseAudio() {
-
-audioPlayer.pause();
-
-updatePlayUI(false);
-
-if (animationFrame) {
-
-```
-cancelAnimationFrame(
-  animationFrame
-);
-
-animationFrame = null;
-```
-
-}
-
-updateProgress();
-}
-
-/* =========================================================
-TOGGLE PLAYBACK
-========================================================= */
-
-async function togglePlayback() {
+async function togglePlay() {
 
 if (
-audioPlayer.paused
+audio.paused
 ) {
 
 ```
-await playAudio();
+await playSong();
 ```
 
 } else {
 
 ```
-pauseAudio();
+audio.pause();
 ```
 
 }
 }
 
 /* =========================================================
-LOAD EVERYTHING
+LOAD SONG
 ========================================================= */
 
-async function loadEverything() {
+async function loadSong() {
 
-const lyricsUrl =
-lyricsUrlInput.value.trim();
+const artist =
+artistInput.value.trim();
+
+const title =
+songInput.value.trim();
 
 const audioUrl =
-audioUrlInput.value.trim();
+audioInput.value.trim();
 
-const duration =
-Number(
-durationInput.value
-);
-
-if (!lyricsUrl) {
+if (!artist) {
 
 ```
 alert(
-  "Enter a Fandom lyrics URL."
+  "Enter an artist name."
 );
+
+artistInput.focus();
 
 return;
 ```
 
 }
 
-if (
-!Number.isFinite(duration) ||
-duration < 5
-) {
+if (!title) {
 
 ```
 alert(
-  "Enter a valid fallback duration of at least 5 seconds."
+  "Enter a song name."
 );
+
+songInput.focus();
 
 return;
 ```
 
 }
 
-fallbackDuration =
-duration;
-
-loadBtn.disabled = true;
+loadBtn.disabled =
+true;
 
 loadBtn.querySelector(
 "span"
@@ -1045,181 +902,131 @@ loadBtn.querySelector(
 "Loading...";
 
 setStatus(
-"Loading",
+"Searching",
 false
 );
 
-resetLyricsDisplay();
-
-lyricsLoaded = false;
-
-fullLyrics = "";
-
-audioPlayer.pause();
-
-audioPlayer.currentTime = 0;
+setLyricsStatus(
+"SEARCHING",
+false
+);
 
 try {
 
 ```
 /*
-  Load lyrics and metadata together.
+  Search metadata first.
 */
 
-const [
-  lyrics,
-  metadata
-] = await Promise.all([
-  fetchFandomLyrics(
-    lyricsUrl
-  ),
-  loadSongMetadata(
-    lyricsUrl
-  )
-]);
-
-
-if (!lyrics) {
-
-  throw new Error(
-    "Lyrics were not found."
+const metadata =
+  await findSongMetadata(
+    artist,
+    title
   );
-}
 
 
-fullLyrics =
-  lyrics;
-
-lyricsLoaded =
-  true;
-
-
-loadAudioSource(
-  audioUrl
+applyMetadata(
+  metadata,
+  artist,
+  title
 );
 
 
 /*
-  With no audio source, the lyrics
-  can still be displayed, but there
-  is nothing to synchronize against.
+  Get lyrics independently.
 */
 
-if (!audioUrl) {
+const lyricsResult =
+  await findLyrics(
+    artist,
+    title
+  );
 
-  lyricsState.textContent =
-    "READY";
+
+prepareLyrics(
+  lyricsResult
+);
+
+
+/*
+  Set audio if the user supplied
+  a permitted direct audio URL.
+*/
+
+const audioLoaded =
+  setAudioSource(
+    audioUrl
+  );
+
+
+resetPlaybackDisplay();
+
+
+if (audioLoaded) {
+
+  await playSong();
+
+} else {
 
   setStatus(
-    "Lyrics ready",
+    "Song found",
     true
   );
 
-  connectionLabel.textContent =
-    "No audio loaded";
+  albumDisplay.textContent =
+    metadata?.album ||
+    "Metadata loaded — add an audio URL to play";
 
-  lyricsOutput.textContent =
-    "";
-
-  updateProgress();
-
-  return;
+  setLyricsStatus(
+    hasLyrics
+      ? "READY"
+      : "NO LYRICS",
+    hasLyrics
+  );
 }
-
-
-setLyricsState(
-  "READY",
-  true
-);
-
-
-setStatus(
-  "Ready",
-  true
-);
-
-
-connectionLabel.textContent =
-  "Audio connected";
-
-
-/*
-  Start playback from the button
-  click that initiated this function.
-*/
-
-await playAudio();
 ```
 
 } catch (error) {
 
 ```
 console.error(
-  "Load error:",
   error
 );
 
-resetLyricsDisplay();
-
-lyricsLoaded = false;
-
-fullLyrics = "";
-
 setStatus(
-  "Load failed",
+  "Search failed",
   false
 );
 
-setLyricsState(
+setLyricsStatus(
   "ERROR",
   false
 );
 
+
+showLyricsPlaceholder(
+  "Could not load song"
+);
+
+
 alert(
-  error.message ||
-  "Something went wrong while loading the song."
+  "Something went wrong while finding the song."
 );
 ```
 
 } finally {
 
 ```
-loadBtn.disabled = false;
+loadBtn.disabled =
+  false;
 
 loadBtn.querySelector(
   "span"
 ).textContent =
-  "Load & Start";
+  "Load Song";
 ```
 
 }
-}
-
-/* =========================================================
-RESTART
-========================================================= */
-
-async function restartSong() {
-
-if (
-!audioPlayer.src
-) {
-
-```
-resetLyricsDisplay();
-
-return;
-```
-
-}
-
-audioPlayer.currentTime =
-0;
-
-lyricsOutput.scrollTop =
-0;
-
-await playAudio();
 }
 
 /* =========================================================
@@ -1231,28 +1038,30 @@ seekBar.addEventListener(
 () => {
 
 ```
+if (!audio.src) {
+  return;
+}
+
+
 if (
-  !audioPlayer.src
+  !Number.isFinite(
+    audio.duration
+  )
 ) {
   return;
 }
 
 
-const duration =
-  getTotalDuration();
-
-const percentage =
-  Number(
-    seekBar.value
-  ) / 100;
-
-
-audioPlayer.currentTime =
-  duration *
-  percentage;
+audio.currentTime =
+  audio.duration *
+  (
+    Number(
+      seekBar.value
+    ) / 100
+  );
 
 
-updateProgress();
+updatePlaybackUI();
 ```
 
 }
@@ -1267,30 +1076,13 @@ volumeBar.addEventListener(
 () => {
 
 ```
-const volume =
+audio.volume =
   Number(
     volumeBar.value
   );
 
-audioPlayer.volume =
-  volume;
-
-if (volume === 0) {
-
-  audioPlayer.muted =
-    true;
-
-} else {
-
-  audioPlayer.muted =
-    false;
-}
-
-
-volumeIcon.textContent =
-  volume === 0
-    ? "×"
-    : "◖)";
+audio.muted =
+  audio.volume === 0;
 ```
 
 }
@@ -1305,20 +1097,34 @@ muteBtn.addEventListener(
 () => {
 
 ```
-audioPlayer.muted =
-  !audioPlayer.muted;
+audio.muted =
+  !audio.muted;
+```
 
-
-if (audioPlayer.muted) {
-
-  volumeIcon.textContent =
-    "×";
-
-} else {
-
-  volumeIcon.textContent =
-    "◖)";
 }
+);
+
+/* =========================================================
+RESTART
+========================================================= */
+
+restartBtn.addEventListener(
+"click",
+async () => {
+
+```
+if (!audio.src) {
+  return;
+}
+
+
+audio.currentTime =
+  0;
+
+lyricsOutput.scrollTop =
+  0;
+
+await playSong();
 ```
 
 }
@@ -1328,75 +1134,65 @@ if (audioPlayer.muted) {
 AUDIO EVENTS
 ========================================================= */
 
-audioPlayer.addEventListener(
+audio.addEventListener(
 "loadedmetadata",
 () => {
 
 ```
-const duration =
-  getTotalDuration();
+totalTimeText.textContent =
+  formatTime(
+    audio.duration
+  );
 
-totalTimeLabel.textContent =
-  formatTime(duration);
-
-updateProgress();
+updatePlaybackUI();
 ```
 
 }
 );
 
-audioPlayer.addEventListener(
+audio.addEventListener(
 "timeupdate",
 () => {
 
 ```
-updateProgress();
+updatePlaybackUI();
 ```
 
 }
 );
 
-audioPlayer.addEventListener(
+audio.addEventListener(
 "play",
 () => {
 
 ```
-updatePlayUI(true);
-
-if (!animationFrame) {
-
-  animationFrame =
-    requestAnimationFrame(
-      updateProgress
-    );
-}
+setPlayingUI(
+  true
+);
 ```
 
 }
 );
 
-audioPlayer.addEventListener(
+audio.addEventListener(
 "pause",
 () => {
 
 ```
-updatePlayUI(false);
-
-updateProgress();
+setPlayingUI(
+  false
+);
 ```
 
 }
 );
 
-audioPlayer.addEventListener(
+audio.addEventListener(
 "ended",
 () => {
 
 ```
-updatePlayUI(false);
-
-setLyricsState(
-  "FINISHED",
+setPlayingUI(
   false
 );
 
@@ -1405,23 +1201,16 @@ setStatus(
   false
 );
 
-progressFill.style.width =
-  "100%";
-
-percentInfo.textContent =
-  "100%";
-
-seekBar.value =
-  "100";
-
-currentTimeLabel.textContent =
-  totalTimeLabel.textContent;
+setLyricsStatus(
+  "FINISHED",
+  false
+);
 
 
-if (lyricsLoaded) {
+if (hasLyrics) {
 
   lyricsOutput.textContent =
-    fullLyrics;
+    lyrics;
 
   lyricsOutput.scrollTop =
     lyricsOutput.scrollHeight;
@@ -1431,7 +1220,7 @@ if (lyricsLoaded) {
 }
 );
 
-audioPlayer.addEventListener(
+audio.addEventListener(
 "error",
 () => {
 
@@ -1441,35 +1230,16 @@ setStatus(
   false
 );
 
-setLyricsState(
+footerStatus.textContent =
+  "Audio failed to load";
+
+setLyricsStatus(
   "AUDIO ERROR",
   false
 );
-
-connectionLabel.textContent =
-  "Audio failed to load";
 ```
 
 }
-);
-
-/* =========================================================
-BUTTON EVENTS
-========================================================= */
-
-loadBtn.addEventListener(
-"click",
-loadEverything
-);
-
-playBtn.addEventListener(
-"click",
-togglePlayback
-);
-
-restartBtn.addEventListener(
-"click",
-restartSong
 );
 
 /* =========================================================
@@ -1481,36 +1251,45 @@ document.addEventListener(
 (event) => {
 
 ```
-/*
-  Don't steal spacebar behavior
-  while the user is typing in an input.
-*/
+const tag =
+  event.target.tagName;
 
-const target =
-  event.target;
-
-const isTyping =
-  target.tagName === "INPUT" ||
-  target.tagName === "TEXTAREA";
+const editing =
+  tag === "INPUT" ||
+  tag === "TEXTAREA";
 
 
 if (
   event.code === "Space" &&
-  !isTyping
+  !editing
 ) {
 
   event.preventDefault();
 
-  togglePlayback();
+  togglePlay();
 }
 
 
 if (
   event.code === "KeyR" &&
-  !isTyping
+  !editing
 ) {
 
-  restartSong();
+  restartBtn.click();
+}
+
+
+if (
+  event.code === "Enter" &&
+  editing
+) {
+
+  /*
+    Enter in either text field
+    loads the song.
+  */
+
+  loadSong();
 }
 ```
 
@@ -1518,16 +1297,17 @@ if (
 );
 
 /* =========================================================
-3D MOUSE INTERACTION
+3D ALBUM INTERACTION
 ========================================================= */
 
-albumStage.addEventListener(
+coverCard.addEventListener(
 "pointermove",
 (event) => {
 
 ```
 const rect =
-  albumStage.getBoundingClientRect();
+  coverCard.getBoundingClientRect();
+
 
 const x =
   event.clientX -
@@ -1537,6 +1317,7 @@ const y =
   event.clientY -
   rect.top;
 
+
 const centerX =
   rect.width / 2;
 
@@ -1545,20 +1326,25 @@ const centerY =
 
 
 const rotateY =
-  ((x - centerX) / centerX) *
-  8;
+  (
+    (x - centerX) /
+    centerX
+  ) * 8;
+
 
 const rotateX =
-  ((centerY - y) / centerY) *
-  8;
+  (
+    (centerY - y) /
+    centerY
+  ) * 8;
 
 
-albumCoverWrap.style.setProperty(
+coverCard.style.setProperty(
   "--rx",
   `${rotateX}deg`
 );
 
-albumCoverWrap.style.setProperty(
+coverCard.style.setProperty(
   "--ry",
   `${rotateY}deg`
 );
@@ -1567,17 +1353,17 @@ albumCoverWrap.style.setProperty(
 }
 );
 
-albumStage.addEventListener(
+coverCard.addEventListener(
 "pointerleave",
 () => {
 
 ```
-albumCoverWrap.style.setProperty(
+coverCard.style.setProperty(
   "--rx",
   "0deg"
 );
 
-albumCoverWrap.style.setProperty(
+coverCard.style.setProperty(
   "--ry",
   "0deg"
 );
@@ -1590,28 +1376,31 @@ albumCoverWrap.style.setProperty(
 BACKGROUND PARALLAX
 ========================================================= */
 
-let targetMouseX = 0;
-let targetMouseY = 0;
+let targetX = 0;
+let targetY = 0;
 
-let currentMouseX = 0;
-let currentMouseY = 0;
+let currentX = 0;
+let currentY = 0;
 
 document.addEventListener(
 "pointermove",
 (event) => {
 
 ```
-targetMouseX =
-  (event.clientX /
+targetX =
+  (
+    event.clientX /
     window.innerWidth -
-    0.5) *
-  28;
+    0.5
+  ) * 30;
 
-targetMouseY =
-  (event.clientY /
+
+targetY =
+  (
+    event.clientY /
     window.innerHeight -
-    0.5) *
-  20;
+    0.5
+  ) * 20;
 ```
 
 }
@@ -1619,24 +1408,26 @@ targetMouseY =
 
 function animateBackground() {
 
-currentMouseX +=
-(targetMouseX -
-currentMouseX) *
-0.06;
+currentX +=
+(
+targetX -
+currentX
+) * 0.05;
 
-currentMouseY +=
-(targetMouseY -
-currentMouseY) *
-0.06;
+currentY +=
+(
+targetY -
+currentY
+) * 0.05;
 
 document.documentElement.style.setProperty(
-"--mx",
-currentMouseX
+"--mouse-x",
+`${currentX}px`
 );
 
 document.documentElement.style.setProperty(
-"--my",
-currentMouseY
+"--mouse-y",
+`${currentY}px`
 );
 
 requestAnimationFrame(
@@ -1655,18 +1446,16 @@ setStatus(
 false
 );
 
-setLyricsState(
+setLyricsStatus(
 "STANDBY",
 false
 );
 
-updateTrackDisplay(
-"Unknown Artist",
-"Waiting for a song",
-"Paste a lyrics page and connect your audio."
-);
+artistInput.value =
+"";
 
-totalTimeLabel.textContent =
-formatTime(
-fallbackDuration
-);
+songInput.value =
+"";
+
+audioInput.value =
+"";
