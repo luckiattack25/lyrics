@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 
 <html lang="en">
+
 <head>
+
   <meta charset="UTF-8">
 
 <meta
@@ -12,11 +14,11 @@ content="width=device-width, initial-scale=1.0"
 
 <meta
 name="theme-color"
-content="#07080d"
+content="#06070b"
 
 >
 
-  <title>EchoType — Lyrics Player</title>
+  <title>EchoType</title>
 
   <link
     rel="preconnect"
@@ -38,148 +40,172 @@ content="#07080d"
     rel="stylesheet"
     href="style.css"
   >
+
 </head>
 
 <body>
 
-  <!-- =====================================================
-       3D BACKGROUND
-  ====================================================== -->
+  <!-- BACKGROUND -->
 
-  <div class="scene" aria-hidden="true">
+  <div class="background" aria-hidden="true">
 
 ```
-<div class="stars stars-one"></div>
-<div class="stars stars-two"></div>
+<div class="glow glow-a"></div>
+<div class="glow glow-b"></div>
+<div class="glow glow-c"></div>
 
-<div class="ambient ambient-one"></div>
-<div class="ambient ambient-two"></div>
-<div class="ambient ambient-three"></div>
+<div class="stars"></div>
 
-<div class="grid-plane"></div>
+<div class="grid"></div>
 ```
 
   </div>
 
-  <!-- =====================================================
-       APP
-  ====================================================== -->
+  <!-- APP -->
 
-  <main class="app-shell">
+  <main class="app">
 
 ```
-<!-- HEADER -->
+<!-- TOP BAR -->
 
 <header class="topbar">
 
   <div class="brand">
 
-    <div class="brand-mark">
+    <div class="logo">
       <span></span>
       <span></span>
       <span></span>
     </div>
 
     <div>
-      <div class="brand-name">EchoType</div>
-      <div class="brand-subtitle">
+
+      <div class="brand-name">
+        EchoType
+      </div>
+
+      <div class="brand-tagline">
         Lyrics in motion
       </div>
+
     </div>
 
   </div>
 
-  <div class="live-status">
-    <span class="status-dot"></span>
-    <span id="statusText">Ready</span>
+
+  <div class="ready-state">
+
+    <span
+      id="statusDot"
+      class="status-dot"
+    ></span>
+
+    <span id="statusText">
+      Ready
+    </span>
+
   </div>
 
 </header>
 
 
-<!-- MAIN GRID -->
+<!-- MAIN CONTENT -->
 
-<section class="workspace">
+<div class="layout">
 
 
-  <!-- =================================================
-       PLAYER
-  ================================================== -->
+  <!-- LEFT -->
 
-  <section class="player-panel glass-card">
+  <section class="player glass">
 
-    <div class="panel-label">
-      NOW PLAYING
+
+    <div class="section-label">
+      PLAYER
     </div>
 
 
-    <!-- 3D COVER -->
+    <!-- COVER -->
 
     <div
-      class="album-stage"
-      id="albumStage"
+      class="cover-stage"
+      id="coverStage"
     >
 
-      <div class="album-shadow"></div>
+      <div class="cover-shadow"></div>
 
-      <div class="album-cover-wrap" id="albumCoverWrap">
+      <div
+        class="cover-card"
+        id="coverCard"
+      >
 
-        <div class="album-cover-placeholder" id="albumPlaceholder">
-          <div class="placeholder-letter">E</div>
-          <div class="placeholder-lines">
-            <span></span>
-            <span></span>
-            <span></span>
-          </div>
-        </div>
-
-        <img
-          id="coverArt"
-          class="album-cover hidden"
-          src=""
-          alt="Album cover"
+        <div
+          id="placeholderCover"
+          class="placeholder-cover"
         >
 
-        <div class="cover-glare"></div>
+          <div class="placeholder-e">
+            E
+          </div>
+
+          <div class="equalizer">
+
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+
+          </div>
+
+        </div>
+
+
+        <img
+          id="coverImage"
+          class="cover-image hidden"
+          alt="Album artwork"
+        >
+
+        <div class="cover-shine"></div>
 
       </div>
 
-      <div class="orbit orbit-one"></div>
-      <div class="orbit orbit-two"></div>
-      <div class="orbit orbit-three"></div>
+
+      <div class="ring ring-a"></div>
+      <div class="ring ring-b"></div>
+      <div class="ring ring-c"></div>
 
     </div>
 
 
-    <!-- TRACK INFO -->
+    <!-- TRACK -->
 
-    <div class="track-info">
+    <div class="track">
 
       <div
-        class="eyebrow"
-        id="trackArtist"
+        id="artistDisplay"
+        class="track-artist"
       >
         Unknown Artist
       </div>
 
-      <h1 id="trackTitle">
-        Waiting for a song
+      <h1 id="titleDisplay">
+        Choose a song
       </h1>
 
-      <p id="trackMeta">
-        Paste a lyrics page and connect your audio.
+      <p id="albumDisplay">
+        Enter an artist and song below.
       </p>
 
     </div>
 
 
-    <!-- TIMELINE -->
+    <!-- PROGRESS -->
 
     <div class="timeline">
 
       <input
         id="seekBar"
-        class="seek-bar"
         type="range"
         min="0"
         max="100"
@@ -188,9 +214,16 @@ content="#07080d"
         aria-label="Song progress"
       >
 
-      <div class="timeline-labels">
-        <span id="currentTime">0:00</span>
-        <span id="totalTime">0:00</span>
+      <div class="time-row">
+
+        <span id="currentTime">
+          0:00
+        </span>
+
+        <span id="totalTime">
+          0:00
+        </span>
+
       </div>
 
     </div>
@@ -198,36 +231,38 @@ content="#07080d"
 
     <!-- CONTROLS -->
 
-    <div class="player-controls">
+    <div class="controls">
 
       <button
         id="restartBtn"
-        class="icon-button"
+        class="circle-btn"
         type="button"
-        aria-label="Restart song"
         title="Restart"
+        aria-label="Restart song"
       >
         ↺
       </button>
 
       <button
         id="playBtn"
-        class="play-button"
+        class="play-btn"
         type="button"
-        aria-label="Play"
         title="Play"
+        aria-label="Play"
       >
-        <span id="playIcon">▶</span>
+        <span id="playIcon">
+          ▶
+        </span>
       </button>
 
       <button
         id="muteBtn"
-        class="icon-button"
+        class="circle-btn"
         type="button"
-        aria-label="Mute"
         title="Mute"
+        aria-label="Mute"
       >
-        <span id="volumeIcon">◖)</span>
+        ◖)
       </button>
 
     </div>
@@ -235,13 +270,14 @@ content="#07080d"
 
     <!-- VOLUME -->
 
-    <div class="volume-row">
+    <div class="volume">
 
-      <span class="volume-label">VOL</span>
+      <span>
+        VOL
+      </span>
 
       <input
         id="volumeBar"
-        class="volume-bar"
         type="range"
         min="0"
         max="1"
@@ -253,90 +289,84 @@ content="#07080d"
     </div>
 
 
-    <!-- AUDIO -->
+    <!-- AUDIO SOURCE -->
 
-    <audio
-      id="audioPlayer"
-      preload="metadata"
-    ></audio>
+    <div class="source">
 
+      <div class="source-top">
 
-    <!-- SOURCE PANEL -->
-
-    <div class="source-panel">
-
-      <div class="source-heading">
         <div>
-          <span class="source-title">Song source</span>
-          <span class="source-helper">
-            Bring your own audio URL
-          </span>
+
+          <strong>
+            Find a song
+          </strong>
+
+          <small>
+            Artist + title
+          </small>
+
         </div>
 
-        <div class="source-badge">
-          LOCAL / WEB
-        </div>
+        <span class="badge">
+          MUSIC
+        </span>
+
       </div>
 
 
-      <label class="field">
-
-        <span>Lyrics page</span>
+      <label>
+        <span>Artist</span>
 
         <input
-          id="lyricsUrl"
-          type="url"
-          value="https://lyrics.fandom.com/wiki/Lucki:Goku"
-          placeholder="https://lyrics.fandom.com/wiki/Artist:Song"
+          id="artistInput"
+          type="text"
+          placeholder="e.g. Lucki"
           autocomplete="off"
         >
 
       </label>
 
 
-      <label class="field">
+      <label>
+        <span>Song</span>
 
+        <input
+          id="songInput"
+          type="text"
+          placeholder="e.g. Goku"
+          autocomplete="off"
+        >
+
+      </label>
+
+
+      <label>
         <span>Audio URL</span>
 
         <input
-          id="audioUrl"
+          id="audioInput"
           type="url"
-          placeholder="Paste a direct .mp3, .wav, or .ogg URL"
+          placeholder="Optional direct audio URL"
           autocomplete="off"
         >
-
-      </label>
-
-
-      <label class="field">
-
-        <span>Fallback duration</span>
-
-        <div class="duration-wrap">
-
-          <input
-            id="duration"
-            type="number"
-            min="5"
-            value="140"
-          >
-
-          <span class="duration-unit">
-            SEC
-          </span>
-
-        </div>
 
       </label>
 
 
       <button
         id="loadBtn"
-        class="load-button"
+        class="load-btn"
         type="button"
       >
-        <span>Load & Start</span>
-        <span class="load-arrow">→</span>
+
+        <span>
+          Load Song
+        </span>
+
+        <b>
+          →
+        </b>
+
       </button>
 
     </div>
@@ -344,29 +374,29 @@ content="#07080d"
   </section>
 
 
-  <!-- =================================================
-       LYRICS
-  ================================================== -->
+  <!-- RIGHT -->
 
-  <section class="lyrics-panel glass-card">
+  <section class="lyrics glass">
 
-    <div class="lyrics-header">
+
+    <div class="lyrics-top">
 
       <div>
 
-        <div class="panel-label">
+        <div class="section-label">
           LIVE LYRICS
         </div>
 
         <h2>
-          Typewriter mode
+          Typewriter
         </h2>
 
       </div>
 
+
       <div
-        class="lyrics-state"
-        id="lyricsState"
+        id="lyricsStatus"
+        class="lyrics-status"
       >
         STANDBY
       </div>
@@ -374,47 +404,58 @@ content="#07080d"
     </div>
 
 
-    <div class="lyrics-stage">
+    <div class="lyrics-window">
 
-      <div class="lyrics-glow"></div>
+      <div class="lyrics-light"></div>
 
       <div
         id="lyricsOutput"
         class="lyrics-output"
-        aria-live="polite"
       >
-        <span class="lyrics-placeholder">
-          Your lyrics will appear here.
-        </span>
+
+        <div class="lyrics-empty">
+
+          <div class="empty-icon">
+            ♪
+          </div>
+
+          <strong>
+            Nothing playing
+          </strong>
+
+          <span>
+            Choose a song to begin.
+          </span>
+
+        </div>
+
       </div>
 
-      <div class="caret"></div>
+      <div class="text-cursor"></div>
 
     </div>
 
 
     <div class="lyrics-footer">
 
-      <div class="progress-copy">
+      <div class="sync-label">
 
-        <span
-          id="percentInfo"
-          class="progress-percent"
-        >
+        <span id="percentInfo">
           0%
         </span>
 
         <span>
-          synced playback
+          playback sync
         </span>
 
       </div>
 
-      <div class="mini-progress">
+
+      <div class="progress-track">
 
         <div
           id="progressFill"
-          class="mini-progress-fill"
+          class="progress-fill"
         ></div>
 
       </div>
@@ -423,27 +464,23 @@ content="#07080d"
 
   </section>
 
-</section>
+</div>
 
 
 <!-- FOOTER -->
 
-<footer class="app-footer">
+<footer>
 
   <span>
     EchoType
   </span>
 
-  <span class="footer-separator">•</span>
-
   <span>
-    Interactive lyrics player
+    •
   </span>
 
-  <span class="footer-spacer"></span>
-
-  <span id="connectionLabel">
-    No audio loaded
+  <span id="footerStatus">
+    No song loaded
   </span>
 
 </footer>
@@ -454,4 +491,5 @@ content="#07080d"
   <script src="script.js"></script>
 
 </body>
+
 </html>
